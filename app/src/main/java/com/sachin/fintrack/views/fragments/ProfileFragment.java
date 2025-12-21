@@ -4,7 +4,6 @@ import android.app.ProgressDialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -36,7 +35,6 @@ public class ProfileFragment extends Fragment {
     FirebaseAuth auth;
     FirebaseFirestore firestore;
     ProgressDialog progressDialog;
-    private boolean isCloudinaryInitialized = false;
 
     public ProfileFragment() {}
 
@@ -46,12 +44,11 @@ public class ProfileFragment extends Fragment {
         auth = FirebaseAuth.getInstance();
         firestore = FirebaseFirestore.getInstance();
 
-        // Cloudinary Setup
         initCloudinary();
 
         progressDialog = new ProgressDialog(getContext());
         progressDialog.setTitle("Profile Update");
-        progressDialog.setMessage("Uploading to Cloudinary...");
+        progressDialog.setMessage("Uploading...");
         progressDialog.setCancelable(false);
 
         Admob.loadBannerAd(binding.bannerAd, getActivity());
@@ -59,6 +56,21 @@ public class ProfileFragment extends Fragment {
         String webUrl = "https://moccasin-leandra-70.tiiny.site/";
         binding.privacyPolicy.setOnClickListener(v -> startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(webUrl))));
         binding.contact.setOnClickListener(v -> startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(webUrl))));
+
+        // --- SHARE BUTTON FINAL FIX WITH YOUR LINK ---
+        binding.share.setOnClickListener(v -> {
+            // Aapka Google Drive Link yahan set kar diya hai
+            String appDownloadLink = "https://drive.google.com/file/d/1poyWiTyRAmIB2zJc9q3Hh193eTwumpXe/view?usp=sharing";
+
+            String shareBody = "Hey! Check out FinTrack, a great app to manage your daily expenses. 📱\n\n" +
+                    "Download and install it from here: " + appDownloadLink;
+
+            Intent intent = new Intent(Intent.ACTION_SEND);
+            intent.setType("text/plain");
+            intent.putExtra(Intent.EXTRA_TEXT, shareBody);
+            // Agle bande ko choices dikhane ke liye chooser use kiya hai
+            startActivity(Intent.createChooser(intent, "Share FinTrack via"));
+        });
 
         binding.fetchImage.setOnClickListener(v -> {
             Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
@@ -73,25 +85,23 @@ public class ProfileFragment extends Fragment {
         });
 
         loadUserData();
-
         return binding.getRoot();
     }
 
     private void initCloudinary() {
         try {
-            Map config = new HashMap();
+            Map<String, String> config = new HashMap<>();
             config.put("cloud_name", "dpwh7vma3");
             config.put("api_key", "521133164344568");
             config.put("api_secret", "adoX4hQ45X_SWa5C7XrBMvFXA9M");
             MediaManager.init(getContext(), config);
         } catch (Exception e) {
-            // Agar pehle se init hai toh error ignore karein
+            // Already initialized
         }
     }
 
     private void loadUserData() {
         if (auth.getUid() == null) return;
-
         firestore.collection("users").document(auth.getUid())
                 .addSnapshotListener((value, error) -> {
                     if (value != null && value.exists()) {
@@ -99,14 +109,9 @@ public class ProfileFragment extends Fragment {
                         if (model != null) {
                             binding.usersName.setText(model.getName());
                             binding.usersEmail.setText(model.getEmail());
-
                             if (model.getProfile() != null && !model.getProfile().isEmpty()) {
-                                Picasso.get()
-                                        .load(model.getProfile())
-                                        .networkPolicy(NetworkPolicy.NO_CACHE)
-                                        .memoryPolicy(MemoryPolicy.NO_CACHE)
-                                        .placeholder(R.drawable.friend_2)
-                                        .into(binding.profileImage);
+                                Picasso.get().load(model.getProfile())
+                                        .placeholder(R.drawable.friend_2).into(binding.profileImage);
                             }
                         }
                     }
@@ -123,35 +128,23 @@ public class ProfileFragment extends Fragment {
 
     private void uploadToCloudinary(Uri uri) {
         progressDialog.show();
-
         MediaManager.get().upload(uri).callback(new UploadCallback() {
-            @Override
-            public void onStart(String requestId) {}
-
-            @Override
-            public void onProgress(String requestId, long bytes, long totalBytes) {}
-
             @Override
             public void onSuccess(String requestId, Map resultData) {
                 String finalUrl = (String) resultData.get("secure_url");
-
-                // Firestore update (Ab ye automatic hoga)
-                firestore.collection("users").document(auth.getUid())
-                        .update("profile", finalUrl)
+                firestore.collection("users").document(auth.getUid()).update("profile", finalUrl)
                         .addOnSuccessListener(unused -> {
                             progressDialog.dismiss();
-                            Toast.makeText(getContext(), "Profile Updated via Cloudinary!", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getContext(), "Updated!", Toast.LENGTH_SHORT).show();
                         });
             }
-
             @Override
             public void onError(String requestId, ErrorInfo error) {
                 progressDialog.dismiss();
-                Toast.makeText(getContext(), "Cloudinary Error: " + error.getDescription(), Toast.LENGTH_SHORT).show();
             }
-
-            @Override
-            public void onReschedule(String requestId, ErrorInfo error) {}
+            @Override public void onStart(String requestId) {}
+            @Override public void onProgress(String requestId, long bytes, long totalBytes) {}
+            @Override public void onReschedule(String requestId, ErrorInfo error) {}
         }).dispatch();
     }
 }

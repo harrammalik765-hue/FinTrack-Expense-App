@@ -46,19 +46,24 @@ public class MainActivity extends AppCompatActivity {
                 int id = item.getItemId();
 
                 if(id == R.id.transactions) {
-                    Constants.SELECTED_TAB = 0; // Tab reset karna zaroori hai
+                    Constants.SELECTED_TAB = 0;
                     loadFragment(new TransactionsFragment());
                 } else if(id == R.id.stats){
-                    Constants.SELECTED_TAB = 1; // Stats load karne se pehle tab set karein
+                    Constants.SELECTED_TAB = 1;
                     loadFragment(new StatsFragment());
                 } else if(id == R.id.accounts){
                     loadFragment(new ProfileFragment());
                 } else if(id == R.id.more){
-                    String shareBody = "Hey, I am Using Best Earning App";
+                    // Yahan humne message ko update kiya hai
+                    String shareBody = "Hey, check out FinTrack! It's a professional Expense Manager app built with Java. \n\nCheck the source code here: https://github.com/harrammalik765-hue/FinTrack-Expense-App";
+
                     Intent intent = new Intent(Intent.ACTION_SEND);
                     intent.setType("text/plain");
+                    intent.putExtra(Intent.EXTRA_SUBJECT, "FinTrack App");
                     intent.putExtra(Intent.EXTRA_TEXT, shareBody);
-                    startActivity(intent);
+
+                    // Is se user asani se app select kar sakega
+                    startActivity(Intent.createChooser(intent, "Share via"));
                     return false;
                 }
                 return true;
@@ -66,10 +71,8 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    // Is method ko use karne se 4 clicks wala issue khatam ho jayega
     private void loadFragment(Fragment fragment) {
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-        // Replace method purane fragments ko "stack" hone se rokta hai
         transaction.replace(R.id.content, fragment);
         transaction.commit();
     }
