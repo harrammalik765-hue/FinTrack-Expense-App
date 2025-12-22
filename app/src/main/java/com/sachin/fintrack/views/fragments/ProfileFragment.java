@@ -17,13 +17,10 @@ import com.cloudinary.android.callback.ErrorInfo;
 import com.cloudinary.android.callback.UploadCallback;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.sachin.fintrack.AdmobAds.Admob;
 import com.sachin.fintrack.R;
 import com.sachin.fintrack.databinding.FragmentProfileBinding;
 import com.sachin.fintrack.models.UserModel;
 import com.sachin.fintrack.views.activites.LoginActivity;
-import com.squareup.picasso.MemoryPolicy;
-import com.squareup.picasso.NetworkPolicy;
 import com.squareup.picasso.Picasso;
 
 import java.util.HashMap;
@@ -51,28 +48,38 @@ public class ProfileFragment extends Fragment {
         progressDialog.setMessage("Uploading...");
         progressDialog.setCancelable(false);
 
-        Admob.loadBannerAd(binding.bannerAd, getActivity());
+        // --- 1. ADS REMOVED FROM HERE ---
+        // Admob.loadBannerAd(binding.bannerAd, getActivity()); // Line commented out or delete it
 
+        // --- 2. PRIVACY & CONTACT LINKS ---
         String webUrl = "https://moccasin-leandra-70.tiiny.site/";
         binding.privacyPolicy.setOnClickListener(v -> startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(webUrl))));
         binding.contact.setOnClickListener(v -> startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(webUrl))));
 
-        // --- SHARE BUTTON FINAL FIX WITH YOUR LINK ---
+        // --- 3. SHARE BUTTON WITH YOUR DRIVE LINK ---
         binding.share.setOnClickListener(v -> {
-            // Aapka Google Drive Link yahan set kar diya hai
-            String appDownloadLink = "https://drive.google.com/file/d/1poyWiTyRAmIB2zJc9q3Hh193eTwumpXe/view?usp=sharing";
+            try {
+                // Aapka Google Drive Download Link
+                String appDownloadLink = "https://drive.google.com/file/d/1poyWiTyRAmIB2zJc9q3Hh193eTwumpXe/view?usp=sharing";
 
-            String shareBody = "Hey! Check out FinTrack, a great app to manage your daily expenses. 📱\n\n" +
-                    "Download and install it from here: " + appDownloadLink;
+                String shareBody = "Download FinTrack App to manage your expenses easily! 💸📱\n\n" +
+                        "Get it here: " + appDownloadLink;
 
-            Intent intent = new Intent(Intent.ACTION_SEND);
-            intent.setType("text/plain");
-            intent.putExtra(Intent.EXTRA_TEXT, shareBody);
-            // Agle bande ko choices dikhane ke liye chooser use kiya hai
-            startActivity(Intent.createChooser(intent, "Share FinTrack via"));
+                Intent intent = new Intent(Intent.ACTION_SEND);
+                intent.setType("text/plain");
+                intent.putExtra(Intent.EXTRA_SUBJECT, "FinTrack App Installation");
+                intent.putExtra(Intent.EXTRA_TEXT, shareBody);
+
+                // Chooser taake user WhatsApp, Gmail wagaira select kar sakay
+                startActivity(Intent.createChooser(intent, "Share FinTrack App"));
+            } catch (Exception e) {
+                Toast.makeText(getContext(), "Unable to share", Toast.LENGTH_SHORT).show();
+            }
         });
 
-        binding.fetchImage.setOnClickListener(v -> {
+        // --- 4. IMAGE FETCH & LOGOUT ---
+        // CircleImageView ya fetchImage button par click logic
+        binding.profileImage.setOnClickListener(v -> {
             Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
             intent.setType("image/*");
             startActivityForResult(intent, 2);
@@ -80,7 +87,9 @@ public class ProfileFragment extends Fragment {
 
         binding.logout.setOnClickListener(v -> {
             auth.signOut();
-            startActivity(new Intent(getContext(), LoginActivity.class));
+            Intent intent = new Intent(getContext(), LoginActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
             getActivity().finish();
         });
 
@@ -127,20 +136,21 @@ public class ProfileFragment extends Fragment {
     }
 
     private void uploadToCloudinary(Uri uri) {
-        progressDialog.show();
+        if (progressDialog != null) progressDialog.show();
         MediaManager.get().upload(uri).callback(new UploadCallback() {
             @Override
             public void onSuccess(String requestId, Map resultData) {
                 String finalUrl = (String) resultData.get("secure_url");
                 firestore.collection("users").document(auth.getUid()).update("profile", finalUrl)
                         .addOnSuccessListener(unused -> {
-                            progressDialog.dismiss();
-                            Toast.makeText(getContext(), "Updated!", Toast.LENGTH_SHORT).show();
+                            if (progressDialog != null) progressDialog.dismiss();
+                            Toast.makeText(getContext(), "Profile Updated!", Toast.LENGTH_SHORT).show();
                         });
             }
             @Override
             public void onError(String requestId, ErrorInfo error) {
-                progressDialog.dismiss();
+                if (progressDialog != null) progressDialog.dismiss();
+                Toast.makeText(getContext(), "Upload Failed!", Toast.LENGTH_SHORT).show();
             }
             @Override public void onStart(String requestId) {}
             @Override public void onProgress(String requestId, long bytes, long totalBytes) {}

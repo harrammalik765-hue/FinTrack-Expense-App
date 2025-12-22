@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -11,7 +12,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.DatePicker;
+import android.widget.Toast;
 
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.sachin.fintrack.AdmobAds.Admob;
@@ -29,7 +30,6 @@ import com.sachin.fintrack.views.activites.MainActivity;
 
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.List;
 
 public class AddTransactionFragment extends BottomSheetDialogFragment {
 
@@ -37,29 +37,28 @@ public class AddTransactionFragment extends BottomSheetDialogFragment {
         // Required empty public constructor
     }
 
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-    }
-
     FragmentAddTransactionBinding binding;
     Transaction transaction;
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
 
         binding = FragmentAddTransactionBinding.inflate(inflater);
-
         transaction = new Transaction();
+
+        // Default values: Inhein null nahi chhorna taake crash na ho
+        transaction.setType(Constants.EXPENSE);
+        transaction.setDate(Calendar.getInstance().getTime());
+        transaction.setAccount("Cash");
+        // Category ko shuru mein null rakhein taake validation check ho sakay
+        transaction.setCategory(null);
 
         binding.incomeBtn.setOnClickListener(view -> {
             binding.incomeBtn.setBackground(getContext().getDrawable(R.drawable.income_selector));
             binding.expenseBtn.setBackground(getContext().getDrawable(R.drawable.default_selector));
             binding.expenseBtn.setTextColor(getContext().getColor(R.color.textColor));
             binding.incomeBtn.setTextColor(getContext().getColor(R.color.greenColor));
-
             transaction.setType(Constants.INCOME);
         });
 
@@ -68,30 +67,24 @@ public class AddTransactionFragment extends BottomSheetDialogFragment {
             binding.expenseBtn.setBackground(getContext().getDrawable(R.drawable.expense_selector));
             binding.expenseBtn.setTextColor(getContext().getColor(R.color.redColor));
             binding.incomeBtn.setTextColor(getContext().getColor(R.color.textColor));
-
             transaction.setType(Constants.EXPENSE);
         });
 
-        binding.date.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                DatePickerDialog datePickerDialog = new DatePickerDialog(getContext());
-                datePickerDialog.setOnDateSetListener((datePicker, i, i1, i2) -> {
-                    Calendar calendar = Calendar.getInstance();
-                    calendar.set(Calendar.DAY_OF_MONTH, datePicker.getDayOfMonth());
-                    calendar.set(Calendar.MONTH, datePicker.getMonth());
-                    calendar.set(Calendar.YEAR, datePicker.getYear());
+        binding.date.setOnClickListener(view -> {
+            DatePickerDialog datePickerDialog = new DatePickerDialog(getContext());
+            datePickerDialog.setOnDateSetListener((datePicker, year, month, dayOfMonth) -> {
+                Calendar calendar = Calendar.getInstance();
+                calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+                calendar.set(Calendar.MONTH, month);
+                calendar.set(Calendar.YEAR, year);
 
-                    //SimpleDateFormat dateFormat = new SimpleDateFormat("dd MMMM, yyyy");
-                    String dateToShow = Helper.formatDate(calendar.getTime());
+                String dateToShow = Helper.formatDate(calendar.getTime());
+                binding.date.setText(dateToShow);
 
-                    binding.date.setText(dateToShow);
-
-                    transaction.setDate(calendar.getTime());
-                    transaction.setId(String.valueOf(calendar.getTime().getTime()));
-                });
-                datePickerDialog.show();
-            }
+                transaction.setDate(calendar.getTime());
+                transaction.setId(String.valueOf(calendar.getTime().getTime()));
+            });
+            datePickerDialog.show();
         });
 
         binding.category.setOnClickListener(c-> {
@@ -99,17 +92,13 @@ public class AddTransactionFragment extends BottomSheetDialogFragment {
             AlertDialog categoryDialog = new AlertDialog.Builder(getContext()).create();
             categoryDialog.setView(dialogBinding.getRoot());
 
-            CategoryAdapter categoryAdapter = new CategoryAdapter(getContext(), Constants.categories, new CategoryAdapter.CategoryClickListener() {
-                @Override
-                public void onCategoryClicked(Category category) {
-                    binding.category.setText(category.getCategoryName());
-                    transaction.setCategory(category.getCategoryName());
-                    categoryDialog.dismiss();
-                }
+            CategoryAdapter categoryAdapter = new CategoryAdapter(getContext(), Constants.categories, category -> {
+                binding.category.setText(category.getCategoryName());
+                transaction.setCategory(category.getCategoryName());
+                categoryDialog.dismiss();
             });
             dialogBinding.recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 3));
             dialogBinding.recyclerView.setAdapter(categoryAdapter);
-
             categoryDialog.show();
         });
 
@@ -125,39 +114,54 @@ public class AddTransactionFragment extends BottomSheetDialogFragment {
             accounts.add(new Account(0, "EasyPaisa"));
             accounts.add(new Account(0, "Other"));
 
-            AccountsAdapter adapter = new AccountsAdapter(getContext(), accounts, new AccountsAdapter.AccountClickListener() {
-                @Override
-                public void onAccountClicked(Account account) {
-                    binding.account.setText(account.getAccountName());
-                    transaction.setAccount(account.getAccountName());
-                    accountsDialog.dismiss();
-                }
+            AccountsAdapter adapter = new AccountsAdapter(getContext(), accounts, account -> {
+                binding.account.setText(account.getAccountName());
+                transaction.setAccount(account.getAccountName());
+                accountsDialog.dismiss();
             });
             dialogBinding.recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
             dialogBinding.recyclerView.setAdapter(adapter);
-
-
             accountsDialog.show();
         });
 
         binding.saveTransactionBtn.setOnClickListener(c-> {
-            double amount = Double.parseDouble(binding.amount.getText().toString());
+            String amountStr = binding.amount.getText().toString();
+
+            // 1. Amount Check
+            if (amountStr.isEmpty()) {
+                binding.amount.setError("Please enter amount");
+                return;
+            }
+
+            // 2. Category Check (Ye crash fix karega)
+            if (transaction.getCategory() == null || transaction.getCategory().isEmpty()) {
+                Toast.makeText(getContext(), "Please select a category first", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            double amount = Double.parseDouble(amountStr);
             String note = binding.note.getText().toString();
 
+            // Type check
             if (transaction.getType().equals(Constants.EXPENSE)){
-                transaction.setAmount(amount*-1);
-            }else {
+                transaction.setAmount(amount * -1);
+            } else {
                 transaction.setAmount(amount);
             }
 
             transaction.setNote(note);
 
+            // Show Ad
             Admob.showInterstitial(requireActivity(), true);
 
-            ((MainActivity)getActivity()).viewModel.addTransaction(transaction);
-            ((MainActivity)getActivity()).getTransactions();
-            dismiss();
+            // Fragment safety check & Add Transaction
+            if (getActivity() instanceof MainActivity) {
+                ((MainActivity) getActivity()).viewModel.addTransaction(transaction);
+                ((MainActivity) getActivity()).getTransactions();
+                dismiss(); // Sirf tab band karein jab data save ho jaye
+            }
         });
+
         return binding.getRoot();
     }
 }

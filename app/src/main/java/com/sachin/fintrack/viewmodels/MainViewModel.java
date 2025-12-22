@@ -7,6 +7,7 @@ import androidx.lifecycle.MutableLiveData;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.sachin.fintrack.models.Transaction;
 import com.sachin.fintrack.utils.Constants;
@@ -35,12 +36,15 @@ public class MainViewModel extends AndroidViewModel {
     }
 
     private CollectionReference getUserTransactionsRef() {
+        if (auth.getCurrentUser() == null) return null;
         String userId = auth.getCurrentUser().getUid();
         return firestore.collection("users").document(userId).collection("transactions");
     }
 
-    // --- CHART LOGIC (StatsFragment ke liye) ---
+    // Stats page ke liye (Summary tab bottom bar wala)
     public void getTransactions(Calendar calendar, String type) {
+        if (getUserTransactionsRef() == null) return;
+
         Calendar queryCalendar = (Calendar) calendar.clone();
         queryCalendar.set(Calendar.HOUR_OF_DAY, 0);
         queryCalendar.set(Calendar.MINUTE, 0);
@@ -50,7 +54,6 @@ public class MainViewModel extends AndroidViewModel {
         Date startTime;
         Date endTime;
 
-        // Stats Fragment ke Tabs ke mutabiq filter
         if (Constants.SELECTED_TAB_STATS == Constants.DAILY) {
             startTime = queryCalendar.getTime();
             queryCalendar.add(Calendar.DATE, 1);
@@ -71,14 +74,15 @@ public class MainViewModel extends AndroidViewModel {
                     List<Transaction> list = new ArrayList<>();
                     for (QueryDocumentSnapshot doc : snapshot) {
                         Transaction t = doc.toObject(Transaction.class);
-                        list.add(t);
+                        if (t != null) list.add(t);
                     }
                     categoriesTransactions.setValue(list);
                 });
     }
 
-    // --- MAIN LOGIC (Home & Notes Tabs ke liye) ---
+    // Main List ke liye (Daily, Monthly, Calendar, Summary, Notes)
     public void getTransactions(Calendar calendar) {
+        if (getUserTransactionsRef() == null) return;
         this.calendar = (Calendar) calendar.clone();
 
         Calendar tempCalendar = (Calendar) calendar.clone();
@@ -90,18 +94,24 @@ public class MainViewModel extends AndroidViewModel {
         Date startTime;
         Date endTime;
 
+        // 1. DAILY (0) ya CALENDAR (2) - Sirf 1 Din ka data
         if (Constants.SELECTED_TAB == 0 || Constants.SELECTED_TAB == 2) {
             startTime = tempCalendar.getTime();
             tempCalendar.add(Calendar.DATE, 1);
             endTime = tempCalendar.getTime();
         }
-        else if (Constants.SELECTED_TAB == 4) {
-            tempCalendar.set(Calendar.MONTH, Calendar.JANUARY);
+        // 2. SUMMARY (3) - AUTOMATICALLY POORA SAAL (Full Year)
+        else if (Constants.SELECTED_TAB == 3) {
+            tempCalendar.set(Calendar.MONTH, Calendar.JANUARY); // January se shuru
             tempCalendar.set(Calendar.DAY_OF_MONTH, 1);
             startTime = tempCalendar.getTime();
-            tempCalendar.add(Calendar.YEAR, 1);
+
+            tempCalendar.set(Calendar.MONTH, Calendar.DECEMBER); // December tak
+            tempCalendar.set(Calendar.DAY_OF_MONTH, 31);
+            tempCalendar.add(Calendar.DATE, 1); // 1 January agle saal ki limit
             endTime = tempCalendar.getTime();
         }
+        // 3. MONTHLY (1) ya NOTES (4) - Poore Mahine ka data
         else {
             tempCalendar.set(Calendar.DAY_OF_MONTH, 1);
             startTime = tempCalendar.getTime();
@@ -112,6 +122,7 @@ public class MainViewModel extends AndroidViewModel {
         getUserTransactionsRef()
                 .whereGreaterThanOrEqualTo("date", startTime)
                 .whereLessThan("date", endTime)
+                .orderBy("date", Query.Direction.DESCENDING)
                 .get()
                 .addOnSuccessListener(snapshot -> {
                     List<Transaction> list = new ArrayList<>();
@@ -121,19 +132,20 @@ public class MainViewModel extends AndroidViewModel {
                         Transaction t = doc.toObject(Transaction.class);
                         if (t == null) continue;
 
+                        double amount = Math.abs(t.getAmount());
+                        if (Constants.INCOME.equals(t.getType())) {
+                            income += amount;
+                        } else {
+                            expense += amount;
+                        }
+
+                        // Filter for Notes Tab
                         if (Constants.SELECTED_TAB == 4) {
                             if (t.getNote() != null && !t.getNote().trim().isEmpty()) {
                                 list.add(t);
                             }
                         } else {
                             list.add(t);
-                        }
-
-                        double amount = t.getAmount();
-                        if (Constants.INCOME.equals(t.getType())) {
-                            income += amount;
-                        } else {
-                            expense += amount;
                         }
                     }
 
@@ -145,6 +157,7 @@ public class MainViewModel extends AndroidViewModel {
     }
 
     public void addTransaction(Transaction transaction) {
+        if (getUserTransactionsRef() == null || transaction == null) return;
         getUserTransactionsRef().add(transaction)
                 .addOnSuccessListener(ref -> {
                     transaction.setId(ref.getId());
@@ -154,7 +167,7 @@ public class MainViewModel extends AndroidViewModel {
     }
 
     public void deleteTransaction(Transaction transaction) {
-        if (transaction.getId() != null) {
+        if (transaction != null && transaction.getId() != null && getUserTransactionsRef() != null) {
             getUserTransactionsRef().document(transaction.getId()).delete()
                     .addOnSuccessListener(unused -> getTransactions(this.calendar));
         }

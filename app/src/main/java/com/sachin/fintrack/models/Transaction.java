@@ -1,5 +1,6 @@
 package com.sachin.fintrack.models;
 
+import com.sachin.fintrack.utils.Constants;
 import java.util.Date;
 
 public class Transaction {
@@ -9,19 +10,23 @@ public class Transaction {
     private double amount;
     private String id;
 
-
     public Transaction(){
-
     }
 
     public Transaction(String id, Date date, double amount, String note, String account, String category, String type) {
         this.id = id;
         this.date = date;
-        this.amount = amount;
         this.note = note;
         this.account = account;
         this.category = category;
         this.type = type;
+
+        // Agar type EXPENSE hai, toh amount ko negative mein convert kar dein
+        if (type.equals(Constants.EXPENSE)) {
+            this.amount = -1 * Math.abs(amount);
+        } else {
+            this.amount = Math.abs(amount);
+        }
     }
 
     public String getType() {
@@ -69,7 +74,12 @@ public class Transaction {
     }
 
     public void setAmount(double amount) {
-        this.amount = amount;
+        // Amount set karte waqt check karein ke type kya hai
+        if (type != null && type.equals(Constants.EXPENSE)) {
+            this.amount = -1 * Math.abs(amount);
+        } else {
+            this.amount = Math.abs(amount);
+        }
     }
 
     public String getId() {
