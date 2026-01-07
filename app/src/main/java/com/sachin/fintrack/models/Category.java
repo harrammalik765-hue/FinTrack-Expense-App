@@ -6,11 +6,13 @@ public class Category {
 
     private int categoryColor;
 
+
+    //Empty Constructor
     public Category() {
     }
 
     public Category(String categoryName, int categoryImage, int categoryColor) {
-        this.categoryName = categoryName;
+        this.categoryName = categoryName;//naya object banana
         this.categoryImage = categoryImage;
         this.categoryColor = categoryColor;
     }

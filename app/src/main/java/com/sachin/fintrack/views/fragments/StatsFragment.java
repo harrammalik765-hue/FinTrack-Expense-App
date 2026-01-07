@@ -75,7 +75,7 @@ public class StatsFragment extends Fragment {
 
         binding.tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
-            public void onTabSelected(TabLayout.Tab tab) {
+            public void onTabSelected(TabLayout.Tab tab) {//Jab bhi user kisi tab par click karega, yeh code active ho jayega.
                 if (tab.getText().toString().equalsIgnoreCase("Daily")) {
                     Constants.SELECTED_TAB_STATS = Constants.DAILY;
                 } else {
@@ -87,13 +87,13 @@ public class StatsFragment extends Fragment {
             @Override public void onTabReselected(TabLayout.Tab tab) {}
         });
 
-        // --- Observer ---
+        // --- Observer ---//LiveData hai) par nazar rakhti hai.
         viewModel.categoriesTransactions.observe(getViewLifecycleOwner(), transactions -> {
             if (transactions != null && !transactions.isEmpty()) {
                 setupPieChart(transactions);
             } else {
                 binding.emptyState.setVisibility(View.VISIBLE);
-                binding.pieChart.setVisibility(View.GONE);
+                binding.pieChart.setVisibility(View.GONE);//screen se bilkul khatam kar dena.
             }
         });
 
@@ -101,19 +101,20 @@ public class StatsFragment extends Fragment {
     }
 
     private void setupPieChart(java.util.List<Transaction> transactions) {
-        binding.emptyState.setVisibility(View.GONE);
+        //Screen ko Taiyar Karna
+        binding.emptyState.setVisibility(View.GONE);//Kisi cheez ko gayab kar dena
         binding.pieChart.setVisibility(View.VISIBLE);
 
-        ArrayList<PieEntry> entries = new ArrayList<>();
-        Map<String, Double> categoryMap = new HashMap<>();
+        ArrayList<PieEntry> entries = new ArrayList<>();//Pie Chart kk slice  ko sambhalegi
+        Map<String, Double> categoryMap = new HashMap<>();//Hisaab Kitaab" ka register hai.
 
-        // Logic: Grouping transactions by Category Name
+        // Kharchon ko Category ke mutabiq jama karna
         for (Transaction transaction : transactions) {
             String cat = transaction.getCategory();
             double amount = Math.abs(transaction.getAmount());
             categoryMap.put(cat, categoryMap.getOrDefault(cat, 0.0) + amount);
         }
-
+        //Map se Graph ki Entries banana
         for (Map.Entry<String, Double> entry : categoryMap.entrySet()) {
             // Label mein Category Name dila rahe hain
             entries.add(new PieEntry(entry.getValue().floatValue(), entry.getKey()));

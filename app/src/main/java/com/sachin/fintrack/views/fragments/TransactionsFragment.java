@@ -32,7 +32,7 @@ public class TransactionsFragment extends Fragment {
     public MainViewModel viewModel;
 
     public TransactionsFragment() {}
-
+//----------------------------------------------------------------------------------------------------------------------------------------------------
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         binding = FragmentTransactionsBinding.inflate(inflater);
@@ -88,8 +88,8 @@ public class TransactionsFragment extends Fragment {
                 }
                 updateDate();
             }
-            @Override public void onTabUnselected(TabLayout.Tab tab) {}
-            @Override public void onTabReselected(TabLayout.Tab tab) {}
+            @Override public void onTabUnselected(TabLayout.Tab tab) {}//Mojooda tab ko chhorne par
+            @Override public void onTabReselected(TabLayout.Tab tab) {}//Selected tab par dobara click karne par
         });
 
         binding.transactionsList.setLayoutManager(new LinearLayoutManager(getContext()));

@@ -31,34 +31,35 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
-        setContentView(binding.getRoot());
-
+        setContentView(binding.getRoot());//.....>Yeh design ko mobile screen par "set" kar deta hai.
+         //object creat
         viewModel = new ViewModelProvider(this).get(MainViewModel.class);
         Constants.setCategories();
-        calendar = Calendar.getInstance();
+        calendar = Calendar.getInstance();//i transactions dikhane ya naya kharcha add karte waqt aaj ki date default set karne ke liye hota hai.
 
-        // Pehla fragment load karein
+        // Pehla Screen load karein
         loadFragment(new TransactionsFragment());
-
+        //(Click Pehchanna)
         binding.bottomNavigationView.setOnItemSelectedListener(new NavigationBarView.OnItemSelectedListener() {
-            @Override
+
+            @Override//Bottom Navigation Menu
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
                 int id = item.getItemId();
 
                 if(id == R.id.transactions) {
-                    Constants.SELECTED_TAB = 0;
+                    Constants.SELECTED_TAB = 0;//Transactions Button
                     loadFragment(new TransactionsFragment());
                 } else if(id == R.id.stats){
-                    Constants.SELECTED_TAB = 1;
+                    Constants.SELECTED_TAB = 1;//Stats Button
                     loadFragment(new StatsFragment());
                 } else if(id == R.id.accounts){
                     loadFragment(new ProfileFragment());
                 } else if(id == R.id.more){
                     // Yahan humne message ko update kiya hai
                     String shareBody = "Hey, check out FinTrack! It's a professional Expense Manager app built with Java. \n\nCheck the source code here: https://github.com/harrammalik765-hue/FinTrack-Expense-App";
-
+                    //Android ko batata hai ke hum koi cheez  (send) karna  chahte hain.
                     Intent intent = new Intent(Intent.ACTION_SEND);
-                    intent.setType("text/plain");
+                    intent.setType("text/plain");// kis tarah ka data bhej rahe
                     intent.putExtra(Intent.EXTRA_SUBJECT, "FinTrack App");
                     intent.putExtra(Intent.EXTRA_TEXT, shareBody);
 
@@ -71,6 +72,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+     //Screen Badalna
     private void loadFragment(Fragment fragment) {
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.replace(R.id.content, fragment);

@@ -37,8 +37,9 @@ public class AddTransactionFragment extends BottomSheetDialogFragment {
         // Required empty public constructor
     }
 
-    FragmentAddTransactionBinding binding;
+    FragmentAddTransactionBinding binding;//ek aisi screen hai jo niche se oopar ki taraf slide hokar aati hai
     Transaction transaction;
+    //-------------------------------------------------------------------------------------------------------------------------
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
@@ -47,14 +48,14 @@ public class AddTransactionFragment extends BottomSheetDialogFragment {
         binding = FragmentAddTransactionBinding.inflate(inflater);
         transaction = new Transaction();
 
-        // Default values: Inhein null nahi chhorna taake crash na ho
+        // Default values (Starting Settings): Inhein null nahi chhorna taake crash na ho
         transaction.setType(Constants.EXPENSE);
         transaction.setDate(Calendar.getInstance().getTime());
         transaction.setAccount("Cash");
         // Category ko shuru mein null rakhein taake validation check ho sakay
         transaction.setCategory(null);
 
-        binding.incomeBtn.setOnClickListener(view -> {
+        binding.incomeBtn.setOnClickListener(view -> {//Button dabne par kya action lena hai.
             binding.incomeBtn.setBackground(getContext().getDrawable(R.drawable.income_selector));
             binding.expenseBtn.setBackground(getContext().getDrawable(R.drawable.default_selector));
             binding.expenseBtn.setTextColor(getContext().getColor(R.color.textColor));
@@ -69,7 +70,7 @@ public class AddTransactionFragment extends BottomSheetDialogFragment {
             binding.incomeBtn.setTextColor(getContext().getColor(R.color.textColor));
             transaction.setType(Constants.EXPENSE);
         });
-
+//------------------------------------------------------------------------------------------------------------------
         binding.date.setOnClickListener(view -> {
             DatePickerDialog datePickerDialog = new DatePickerDialog(getContext());
             datePickerDialog.setOnDateSetListener((datePicker, year, month, dayOfMonth) -> {
@@ -86,22 +87,23 @@ public class AddTransactionFragment extends BottomSheetDialogFragment {
             });
             datePickerDialog.show();
         });
-
+//------------------------------------------------------------------------------------------------------------------------------------
+        //Category Selection Dialog
         binding.category.setOnClickListener(c-> {
             ListDialogBinding dialogBinding = ListDialogBinding.inflate(inflater);
-            AlertDialog categoryDialog = new AlertDialog.Builder(getContext()).create();
+            AlertDialog categoryDialog = new AlertDialog.Builder(getContext()).create();// alert dialog:ek popup dabba banane
             categoryDialog.setView(dialogBinding.getRoot());
 
             CategoryAdapter categoryAdapter = new CategoryAdapter(getContext(), Constants.categories, category -> {
                 binding.category.setText(category.getCategoryName());
-                transaction.setCategory(category.getCategoryName());
+                transaction.setCategory(category.getCategoryName());//Database ke liye user ki choice ko yaad rakhna.
                 categoryDialog.dismiss();
             });
             dialogBinding.recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 3));
-            dialogBinding.recyclerView.setAdapter(categoryAdapter);
+            dialogBinding.recyclerView.setAdapter(categoryAdapter);//Woh container jahan saari categories ki list (icons + names) fit hoti hai.
             categoryDialog.show();
         });
-
+//---------------------------------------------------------------------------------------------------------------------------------------------
         binding.account.setOnClickListener(c->{
             ListDialogBinding dialogBinding = ListDialogBinding.inflate(inflater);
             AlertDialog accountsDialog = new AlertDialog.Builder(getContext()).create();
@@ -156,12 +158,12 @@ public class AddTransactionFragment extends BottomSheetDialogFragment {
 
             // Fragment safety check & Add Transaction
             if (getActivity() instanceof MainActivity) {
-                ((MainActivity) getActivity()).viewModel.addTransaction(transaction);
-                ((MainActivity) getActivity()).getTransactions();
+                ((MainActivity) getActivity()).viewModel.addTransaction(transaction);//Add transaction:Data Database mein chala jata hai.
+                ((MainActivity) getActivity()).getTransactions();// get transaction :Main screen ki list update ho jati hai.
                 dismiss(); // Sirf tab band karein jab data save ho jaye
             }
         });
 
-        return binding.getRoot();
+        return binding.getRoot();//Poore design ka "Main Handle" pakarna.
     }
 }

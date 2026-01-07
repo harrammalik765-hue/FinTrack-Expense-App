@@ -21,9 +21,10 @@ public class LoginActivity extends AppCompatActivity {
     ActivityLoginBinding binding;
     FirebaseAuth auth;
     ProgressDialog progressDialog;
-
+//----------------------------------------------------------------------------------------------------------
+    //Pehle se Login User ko Check Karna
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {//Purana data jo app crash ya rotate hone par wapas milta hai.
         super.onCreate(savedInstanceState);
         binding = ActivityLoginBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());

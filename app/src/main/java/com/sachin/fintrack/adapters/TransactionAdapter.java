@@ -67,7 +67,8 @@ public class TransactionAdapter extends RecyclerView.Adapter<TransactionAdapter.
         } else if (transaction.getType().equals(Constants.EXPENSE)){
             holder.binding.transactionAmount.setTextColor(context.getColor(R.color.redColor));
         }
-
+        //----------------------------------------------------------------------------------------------------------
+        //Transaction Delete Karna (OnLongClickListener)
         holder.itemView.setOnLongClickListener(view -> {
             AlertDialog deleteDialog = new AlertDialog.Builder(context).create();
             deleteDialog.setTitle("Delete Transaction");

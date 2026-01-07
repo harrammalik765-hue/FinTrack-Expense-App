@@ -98,20 +98,22 @@ public class ProfileFragment extends Fragment {
     }
 
     private void initCloudinary() {
-        try {
-            Map<String, String> config = new HashMap<>();
+        try {//Safety Net"
+            Map<String, String> config = new HashMap<>();//Cloudinary ko aapke account ki details dena ha
             config.put("cloud_name", "dpwh7vma3");
             config.put("api_key", "521133164344568");
             config.put("api_secret", "adoX4hQ45X_SWa5C7XrBMvFXA9M");
             MediaManager.init(getContext(), config);
-        } catch (Exception e) {
+        } catch (Exception e) {//Kisi galti ya error ko handle karna.
             // Already initialized
         }
     }
 
     private void loadUserData() {
-        if (auth.getUid() == null) return;
+        if (auth.getUid() == null) return;//Pehle check karta hai ke user login hai ya nahi.
         firestore.collection("users").document(auth.getUid())
+
+       // bagair refresh kiye naam khud badal jayega.
                 .addSnapshotListener((value, error) -> {
                     if (value != null && value.exists()) {
                         UserModel model = value.toObject(UserModel.class);
@@ -119,7 +121,10 @@ public class ProfileFragment extends Fragment {
                             binding.usersName.setText(model.getName());
                             binding.usersEmail.setText(model.getEmail());
                             if (model.getProfile() != null && !model.getProfile().isEmpty()) {
+
+                             //ek library hai jo internet (URL) se user ki photo download
                                 Picasso.get().load(model.getProfile())
+                                        //placeholder ka mtlb hai jab tak photo download ho rahi hai, tab tak ek default image dikhao.
                                         .placeholder(R.drawable.friend_2).into(binding.profileImage);
                             }
                         }

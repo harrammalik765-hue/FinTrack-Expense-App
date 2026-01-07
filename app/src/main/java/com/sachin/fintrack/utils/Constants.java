@@ -8,7 +8,7 @@ import java.util.ArrayList;
 public class Constants {
     public static String INCOME = "INCOME";
     public static String EXPENSE = "EXPENSE";
-
+//----------------------------------------------------------------------------------------------------
     public static ArrayList<Category> categories;
 
     public static int DAILY = 0;
@@ -16,13 +16,13 @@ public class Constants {
     public static int CALENDER = 2;
     public static int SUMMARY = 3;
     public static int NOTES = 4;
-
+//-----------------------------------------------------------------------------------------------------
     public static int SELECTED_TAB = 0;
     public static int SELECTED_TAB_STATS = 0;
     public static String SELECTED_STATS_TYPE = Constants.INCOME;
 
-    public static void setCategories(){
-        categories = new ArrayList<>();
+    public static void setCategories(){//Salary, Business, Loan, etc.) ki ek list banata hai.
+        categories = new ArrayList<>();  //Naam,Icon,Color
         categories.add(new Category("Salary", R.drawable.ic_salary, R.color.category1));
         categories.add(new Category("Business", R.drawable.ic_business, R.color.category2));
         categories.add(new Category("Investment", R.drawable.ic_investment, R.color.category3));
